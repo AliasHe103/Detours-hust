@@ -15,6 +15,7 @@ html {
   align-items: center;
   justify-content: center;
   gap: 50px 10px;
+  background-repeat: repeat-y;
 }
 
 .titlePortion {
@@ -76,23 +77,28 @@ html {
   /*margin: 15vh 10px 0;*/
 }
 
-/*.uploadButton {*/
-/*  position: fixed;*/
-/*  bottom: 15vh;*/
-/*  left: 30vw;*/
-/*  z-index: 999;*/
-/*}*/
-
 .debugWindow {
-  /*position: relative;*/
   width: 40vw;
-  height: 60vh;
+  height: 50vh;
   max-height: 80vh;
   overflow-y: auto;
   border: 3px solid #ccc;
   padding: 10px;
-  border-radius: 5px;
+  border-radius: 0 0 5px 5px;
   font-family: Arial, "Times New Roman", serif;
+}
+
+.debugTitle {
+  width: 40vw;
+  height: 20px;
+  border: 3px solid #ccc;
+  padding: 10px;
+  border-radius: 5px 5px 0 0;
+  background-image: linear-gradient(0deg,#fbc2eb 0%, #a6c1ee 100%);
+  font-size: 15px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .debugButton {
@@ -104,14 +110,28 @@ html {
 
 .analysisWindow {
   width: 30vw;
-  height: 60vh;
+  height: 50vh;
   max-height: 80vh;
   overflow-y: auto;
   border: 3px solid #ccc;
   padding: 10px;
   margin-left: 5px;
-  border-radius: 5px;
+  border-radius: 0 0 5px 5px;
   font-family: Arial, "Times New Roman", serif;
+}
+
+.analysisTitle {
+  width: 30vw;
+  height: 20px;
+  border: 3px solid #ccc;
+  padding: 10px;
+  border-radius: 5px 5px 0 0;
+  background-image: linear-gradient(0deg,#fbc2eb 0%, #a6c1ee 100%);
+  font-size: 15px;
+  margin-left: 5px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .messageBlock {

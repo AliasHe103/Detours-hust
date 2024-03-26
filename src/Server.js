@@ -3,14 +3,40 @@
 const hostIP = "10.12.177.56";
 const injectorPath = '..\\detours\\Inject.exe';
 const net = require('net');
-const server = net.createServer((socket) => {
+const testServer = net.createServer((socket) => {
     socket.on('data', (data) => {
-        console.log('(c++)->' + data.toString());
-        sendMessageToWeb(data.toString());//转发给web
+        const iconv = require('iconv-lite');
+        const str = iconv.decode(data, 'gbk');
+        console.log('(c++)->' + str);
+        //sendMessageToWeb(str);//转发给web
     });
     socket.on('end', () => {
         console.log('(c++)->finished');
     });
+});
+testServer.on('connection', (socket)=>{
+    console.log('client connected!');
+    socket.write('(node js)hello new client!\n');//注意接收端必须设置接收
+});
+testServer.listen(1234, hostIP, () => {
+    console.log(`(node)->server listening on ip ${hostIP}, port 1234`);
+});
+
+const server = net.createServer((socket) => {
+    socket.on('data', (data) => {
+        const iconv = require('iconv-lite');
+        const str = iconv.decode(data, 'gbk');
+        console.log('(c++)->' + str);
+        sendMessageToWeb(str);//转发给web
+    });
+    socket.on('end', () => {
+        console.log('(c++)->finished');
+    });
+});
+
+server.on('connection', (socket)=>{
+    console.log('client connected!');
+    // socket.write('(node js)hello new client!\n');//注意接收端必须设置接收
 });
 
 server.on('error', (err) => {
@@ -32,10 +58,11 @@ const clients = new Set();
 wsServer.on('connection', (ws) => {
     console.log('Web client connected');
     clients.add(ws);
-
-    wsServer.on('close', () => {
+    console.log(clients.size);
+    ws.on('close', () => {
         console.log('Web client disconnected');
         clients.delete(ws);
+        console.log(clients.size);
     });
 });
 
@@ -56,6 +83,7 @@ const fs = require("fs");
 const app = express();
 const upload = multer({ dest: "upload/" });
 const cors = require("cors");
+const iconv = require("iconv-lite");
 app.use(cors());
 
 app.post("/upload", upload.single("file"), (req, res) => {

@@ -1,14 +1,19 @@
-import React, {useEffect, useState, useRef} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import './Interface.css';
 import {motion} from "framer-motion";
-import {LoadingRectangle, MeteorAnimation, AnimationSwitchComponent, BackgroundSwitchComponent, AuthorLink} from './Components.js'
+import {
+    AnimationSwitchComponent,
+    AuthorLink,
+    BackgroundSwitchComponent,
+    LoadingRectangle,
+    MeteorAnimation
+} from './Components.js'
 
 //定义服务端ip
 const hostIP = "10.12.177.56"
 
 //WebSocketComponent:接收node程序转发的消息，展示
-const WebSocketComponent = ({ analysis, updateAnalysis }) => {
-    const ws = useRef(new WebSocket(`ws://${hostIP}:8081`));
+const WebSocketComponent = ({ updateAnalysis}) => {
     const [blocks, setBlocks] = useState([]);
     const debugWindowRef = useRef(null);
 
@@ -18,84 +23,83 @@ const WebSocketComponent = ({ analysis, updateAnalysis }) => {
             debugWindowRef.current.scrollTop = debugWindowRef.current.scrollHeight;
         }
     }, [blocks]);
+    const handleMessage = useCallback((event) => {
+        const message = event.data;
+        // 处理消息逻辑
+        if (message.includes("[tips]")) {
+            updateAnalysis(message);
+        }
+        const currentTime = new Date().toLocaleTimeString();
+        const newBlock = { message, time: currentTime };
+        setBlocks(prevBlocks => [...prevBlocks, newBlock]);
+    }, []);
 
-    //处理来自服务端的消息
     useEffect(() => {
-        ws.current.onopen = () => {
+        let ws;
+        if (!ws) {
+            ws = new WebSocket(`ws://${hostIP}:8081`);
+            ws.onmessage = handleMessage;
+
             updateAnalysis('连接成功');
         }
-        ws.current.onmessage = (event) => {
-            const message = event.data;
-            if (message.includes("[tips]")) {
-                updateAnalysis(message);
-            }
-            const currentTime = new Date().toLocaleTimeString();
-            const newBlock = { message, time: currentTime };
-            setBlocks(prevBlocks => [...prevBlocks, newBlock]);
-        };
         return () => {
-            if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-                ws.current.close();
+            if(ws) {
+                ws.close();
                 updateAnalysis('连接已断开');
             }
-        };
-    }, [ws]);
+        }
+    }, [handleMessage]);
 
     return (
-        <div ref={debugWindowRef} className="debugWindow">
-            {blocks.map((block, index) => (
-                <motion.div
-                    key={index}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.8 }}
-                    className="messageBlock"
-                    whileHover={{ backgroundColor: "#f8f8f8", fontSize: "20px", transition: {delay: 0 }}}
-                >
-                    <p>{'<' + block.time + '>    ' + block.message}</p>
-                </motion.div>
-            ))}
+        <div>
+            <div className={"debugTitle"}>
+                <p>调试信息窗口</p>
+            </div>
+            <div ref={debugWindowRef} className="debugWindow">
+
+                {blocks.map((block, index) => (
+                    <motion.div
+                        key={index}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: 0.8 }}
+                        className="messageBlock"
+                        whileHover={{ backgroundColor: "#f8f8f8", fontSize: "20px", transition: {delay: 0 }}}
+                    >
+                        <p>{'<' + block.time + '>    ' + block.message}</p>
+                    </motion.div>
+                ))}
+            </div>
         </div>
     );
+
 };
 
 //AnalysisWindow:结果分析窗口
 function AnalysisWindow({analysisMessages, analysisRef}) {
     console.log('analysis: ' + analysisMessages);
     return (
-        <div className="analysisWindow" ref={analysisRef}>
-            {analysisMessages.map((message, index) => (
-                <motion.div
-                    key={index}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.8 }}
-                    className="messageBlock"
-                    whileHover={{ scale: 1.03, backgroundColor: "#f8f8f8", fontSize: "25px", transition: {delay: 0.1 }}}
-                >
-                    <p>{message}</p>
-                </motion.div>
-            ))}
+        <div>
+            <div className={"analysisTitle"}>
+                <p>分析信息窗口</p>
+            </div>
+            <div className="analysisWindow" ref={analysisRef}>
+                {analysisMessages.map((message, index) => (
+                    <motion.div
+                        key={index}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: 0.8 }}
+                        className="messageBlock"
+                        whileHover={{ scale: 1.03, backgroundColor: "#f8f8f8", fontSize: "25px", transition: {delay: 0.1 }}}
+                    >
+                        <p>{message}</p>
+                    </motion.div>
+                ))}
+            </div>
         </div>
     );
 }
-
-// function AnalysisButton({text}) {
-//     return (
-//         <motion.button
-//             className="debugButton"
-//             style={{
-//                 width: "calc(5vw + 10px)",
-//                 height: "5vh",
-//                 borderRadius: '15%',
-//                 backgroundImage: "linear-gradient(120deg,#e0c3fc 0%, #8ec5fc 100%)",
-//             }}
-//             initial={{x: 0, y: "5vh"}}
-//             whileHover={{opacity: 0.8}}
-//             transition={{ duration: 0.5, ease: 'easeInOut'}}
-//         >{text}</motion.button>
-//     );
-// }
 
 function UploadButton({text, analysis, updateAnalysis}) {
     const inputRef = useRef(null);
@@ -124,7 +128,7 @@ function UploadButton({text, analysis, updateAnalysis}) {
                 width: "calc(5vw + 10px)",
                 height: "5vh",
                 borderRadius: '10%',
-                backgroundImage: "linear-gradient(120deg,#e0c3fc 0%, #8ec5fc 100%)",
+                backgroundImage: "hsla(0,0%,100%,.8)",
                 borderColor: "transparent",
             }}
             initial={{x: 0, y: "5vh"}}
@@ -191,7 +195,6 @@ function Interface() {
                         <AnalysisWindow analysisRef={analysisRef} analysisMessages={analysis}/>
                     </div>
                     <UploadButton text={"上传"} analysis={analysis} updateAnalysis={updateAnalysis}/>
-                    {/*<AnalysisButton text={"分析"}/>*/}
                 </div>
             </motion.div>
         </>
